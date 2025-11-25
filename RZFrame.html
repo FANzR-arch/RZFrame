@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="antialiased dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>RZframe</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    screens: { 'md': '900px' },
+                    colors: {
+                        gold: "#D4AF37",
+                        "gold-light": "#F3E5AB",
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['Roboto Mono', 'monospace'],
+                        serif: ['Cinzel', 'serif'],
+                    },
+                    boxShadow: {
+                        'inner-light': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
+
+    <style>
+        /* === RZ Visual System v12.2 === */
+        :root {
+            --bg-color: #f0f2f5;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --text-main: #1a1a1a;
+            --text-sub: #666666;
+            --input-bg: rgba(245, 247, 250, 0.8);
+            --input-border: rgba(0,0,0,0.05);
+            --slider-dot: rgba(0,0,0,0.2);
+            --panel-shadow: 0 -10px 40px rgba(0,0,0,0.08);
+        }
+
+        html.dark {
+            --bg-color: #23262C;
+            --glass-bg: rgba(35, 38, 44, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --text-main: #eeeeee;
+            --text-sub: #9ca3af;
+            --input-bg: rgba(0, 0, 0, 0.25);
+            --input-border: rgba(255,255,255,0.05);
+            --slider-dot: rgba(255,255,255,0.2);
+            --panel-shadow: 0 -10px 40px rgba(0,0,0,0.3);
+        }
+
+        html, body {
+            height: 100dvh; width: 100%; overflow: hidden; position: fixed;
+            font-family: 'Inter', sans-serif; color: var(--text-main);
+            background-color: var(--bg-color);
+            transition: color 0.3s ease, background-color 0.3s ease;
+            -webkit-text-size-adjust: 100%;
+            touch-action: none; 
+        }
+
+        #bg-layer {
+            position: absolute; inset: -20px; z-index: -2;
+            background-size: cover; background-position: center;
+            opacity: 0; transition: opacity 0.8s ease;
+            filter: blur(60px) saturate(1.2) brightness(0.8);
+            transform: scale(1.1);
+        }
+        
+        #bg-overlay {
+            position: absolute; inset: 0; z-index: -1;
+            background: var(--bg-color); opacity: 0.85; transition: opacity 0.5s;
+        }
+
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--panel-shadow);
+            display: flex; flex-direction: column;
+        }
+        
+        @media (max-width: 900px) {
+            .glass-panel-mobile { 
+                border: none; 
+                border-top: 1px solid var(--glass-border); 
+                border-radius: 24px 24px 0 0; 
+                padding-bottom: env(safe-area-inset-bottom);
+            }
+        }
+        @media (min-width: 900px) {
+            .glass-panel-desktop { border-radius: 1.25rem; }
+        }
+
+        .glass-input {
+            background: var(--input-bg); 
+            border-radius: 10px; 
+            border: 1px solid var(--input-border);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+            color: var(--text-main); 
+            font-size: 13px; 
+            font-weight: 600; 
+            transition: all 0.2s;
+        }
+        html.dark .glass-input { box-shadow: inset 0 2px 4px rgba(0,0,0,0.4); }
+        .glass-input:focus { outline: none; background: var(--glass-bg); border-color: var(--glass-border); box-shadow: none; }
+        .glass-input:disabled { opacity: 0.5; cursor: not-allowed; font-style: italic; }
+
+        input[type=range].dotted-slider { 
+            -webkit-appearance: none; width: 100%; background: transparent; padding: 12px 0; 
+            touch-action: pan-y; cursor: pointer;
+        }
+        input[type=range].dotted-slider:focus { outline: none; }
+        input[type=range].dotted-slider::-webkit-slider-runnable-track {
+            width: 100%; height: 4px; background: transparent; 
+            background-image: radial-gradient(circle, var(--slider-dot) 1px, transparent 1px);
+            background-size: 6px 100%; background-repeat: repeat-x; background-position: center;
+        }
+        input[type=range].dotted-slider::-webkit-slider-thumb {
+            height: 20px; width: 20px; 
+            border-radius: 50%; background: var(--text-main);
+            -webkit-appearance: none; margin-top: -8px; 
+            border: 3px solid var(--glass-bg); 
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            transition: transform 0.1s ease-out;
+        }
+        input[type=range].dotted-slider:active::-webkit-slider-thumb { transform: scale(1.2); }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        input[type="file"] { display: none !important; }
+
+        .bg-gold-solid { background-color: #D4AF37; box-shadow: 0 4px 12px rgba(212, 175, 55, 0.25); }
+        .text-gold { color: #D4AF37; }
+        
+        .label-text { font-size: 12px; font-weight: 700; opacity: 0.6; letter-spacing: 0.05em; }
+        
+        .dot-indicator {
+            width: 6px; height: 6px; border-radius: 99px; background: currentColor; opacity: 0.2; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .dot-indicator.active { width: 20px; opacity: 0.8; background: var(--text-main); }
+
+        .swipe-track {
+            display: flex;
+            width: 300%; 
+            height: 100%;
+            will-change: transform;
+            touch-action: pan-y; 
+        }
+        .swipe-panel {
+            width: 33.333%;
+            height: 100%;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        /* iPad 限制宽度，居中显示 */
+        .ipad-limit { max-width: 500px; margin: 0 auto; }
+    </style>
+</head>
+<body class="flex flex-col">
+
+    <!-- Loading -->
+    <div id="loadingOverlay" class="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-black/80 backdrop-blur-md hidden transition-opacity duration-300 opacity-0">
+        <div class="animate-pulse mb-4 text-white">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+        </div>
+        <div class="text-white font-mono text-xs font-bold tracking-[0.3em]">处理中...</div>
+    </div>
+
+    <!-- Pro Modal -->
+    <div id="proModal" class="absolute inset-0 z-[90] flex items-center justify-center bg-black/40 backdrop-blur-md hidden opacity-0 transition-opacity duration-300 px-6">
+        <div class="glass-panel glass-panel-desktop w-full max-w-sm p-8 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-40 h-40 bg-[#D4AF37] opacity-10 blur-[80px] rounded-full pointer-events-none"></div>
+            <div class="flex justify-between items-center mb-6 relative z-10">
+                <h2 class="text-xl font-black italic tracking-tighter">解锁 <span class="text-gold">PRO</span></h2>
+                <button onclick="toggleProModal(false)" class="opacity-50 hover:opacity-100 hover:text-red-500 transition p-2"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div class="mb-6 relative z-10 bg-black/5 dark:bg-white/5 p-4 rounded-xl border border-current/5">
+                <p class="text-xs text-zinc-500 dark:text-zinc-400 mb-3 font-medium text-center">解锁完整编辑功能、高清导出并去除所有限制。</p>
+                <a href="#" target="_blank" class="flex items-center justify-center w-full bg-current/10 hover:bg-current/20 text-current font-bold py-3 rounded-lg text-xs transition"><i data-lucide="shopping-cart" class="w-4 h-4 mr-2"></i> 获取激活码</a>
+            </div>
+            <div class="relative z-10">
+                <p class="text-[10px] opacity-50 mb-2 font-bold uppercase tracking-widest">已有激活码?</p>
+                <input type="text" id="proCodeInput" autocomplete="off" placeholder="RZ-XXXX-XXXX" class="glass-input w-full p-4 text-center font-mono font-bold uppercase mb-4 text-sm tracking-[0.2em] transition-colors shadow-inner">
+                <button onclick="verifyProCode()" class="w-full bg-gold-solid text-black font-black py-4 rounded-xl text-xs tracking-[0.2em] hover:scale-[1.02] active:scale-95 transition transform shadow-lg">立即激活</button>
+            </div>
+            <div id="errorMsg" class="text-red-500 text-[10px] text-center mt-4 h-3 opacity-0 transition-opacity font-bold">无效的激活码</div>
+        </div>
+    </div>
+
+    <div id="bg-layer"></div>
+    <div id="bg-overlay"></div>
+
+    <!-- HEADER -->
+    <header class="h-16 shrink-0 flex items-center justify-between px-6 z-50 transition-colors duration-300">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 bg-black dark:bg-white flex items-center justify-center rounded-xl shadow-xl">
+                <svg width="20" height="20" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 20 H70 C85 20 85 45 70 45 H50 V80 M50 45 L80 80 M30 80 V20" stroke="currentColor" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" class="text-white dark:text-black"/></svg>
+            </div>
+            <div><h1 id="appTitle" class="font-bold text-sm tracking-tight leading-none">RZframe</h1><span class="text-[9px] font-bold opacity-40 tracking-[0.3em] uppercase">网页版</span></div>
+        </div>
+        <div class="flex items-center gap-4">
+            <button id="clearBtn" onclick="clearImage()" class="opacity-0 pointer-events-none hover:text-red-500 transition duration-300 p-2" title="清空图片"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+            <div class="w-px h-4 bg-current opacity-20"></div>
+            <!-- Pro Button: Removed 'hidden' class for safety -->
+            <button id="upgradeBtn" onclick="toggleProModal(true)" class="w-8 h-8 rounded-full bg-gold-solid text-black hover:brightness-110 active:scale-95 transition flex items-center justify-center z-50">
+                <svg width="14" height="14" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 20 H70 C85 20 85 45 70 45 H50 V80 M50 45 L80 80 M30 80 V20" stroke="black" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button onclick="toggleTheme()" class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition group"><i data-lucide="sun" class="w-5 h-5 hidden dark:block group-hover:rotate-90 transition-transform"></i><i data-lucide="moon" class="w-5 h-5 block dark:hidden group-hover:-rotate-12 transition-transform"></i></button>
+        </div>
+    </header>
+
+    <!-- LAYOUT -->
+    <div class="flex-1 flex flex-col md:flex-row overflow-hidden relative z-10 md:px-6 md:pb-6 gap-6">
+
+        <!-- LEFT SIDEBAR (Desktop Only) -->
+        <aside class="hidden md:flex w-80 shrink-0 flex-col z-20 h-full overflow-hidden min-w-[320px]">
+            <div class="glass-panel glass-panel-desktop flex-1 p-6 overflow-y-auto no-scrollbar">
+                <div id="desktop-style-mount"></div> 
+            </div>
+        </aside>
+
+        <!-- CANVAS AREA -->
+        <main class="relative w-full md:flex-1 h-[70%] md:h-full transition-all flex items-center justify-center overflow-hidden p-4 md:p-0 order-1 md:order-2 min-w-0">
+            <div id="emptyState" class="glass-panel glass-panel-desktop w-full h-full md:w-auto md:h-auto md:p-16 flex flex-col items-center justify-center cursor-pointer hover:bg-white/50 dark:hover:bg-black/20 transition-all duration-300 border-2 border-dashed border-current/10 rounded-3xl group" onclick="document.getElementById('fileInput').click()">
+                <div class="w-20 h-20 bg-current/5 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500"><i data-lucide="image-plus" class="w-10 h-10 opacity-40"></i></div>
+                <span class="text-xs font-black opacity-40 tracking-[0.3em] group-hover:opacity-60 transition">点击上传照片</span>
+            </div>
+            <canvas id="mainCanvas" class="max-w-full max-h-full shadow-2xl hidden cursor-move object-contain rounded-sm transition-opacity duration-500 opacity-0"></canvas>
+        </main>
+
+        <!-- CONTROLS AREA (Right/Bottom) -->
+        <div id="controlsArea" class="flex-1 md:flex-none md:w-80 md:h-full glass-panel-mobile md:glass-panel-desktop overflow-hidden order-3 z-20 relative min-w-0 w-full">
+             
+             <!-- DESKTOP VIEW (Hidden on mobile) -->
+             <div id="desktop-right-panel" class="hidden md:flex flex-col gap-8 h-full p-6 overflow-y-auto no-scrollbar">
+                 <!-- Will inject Info + Export here -->
+             </div>
+
+             <!-- MOBILE VIEW (Hidden on desktop) - 300% Slider -->
+             <div class="md:hidden h-full flex flex-col relative overflow-hidden w-full">
+                 <div id="swipeTrack" class="swipe-track" style="transform: translateX(0px);">
+                     <!-- Panel 1 -->
+                     <div class="swipe-panel p-0"><div class="h-full p-6 pb-8 ipad-limit" id="mobile-style-mount"></div></div>
+                     <!-- Panel 2 -->
+                     <div class="swipe-panel p-0"><div class="h-full p-6 pb-8 ipad-limit" id="mobile-info-mount"></div></div>
+                     <!-- Panel 3 -->
+                     <div class="swipe-panel p-0"><div class="h-full p-6 pb-8 ipad-limit" id="mobile-export-mount"></div></div>
+                 </div>
+                 <div class="h-10 shrink-0 flex items-center justify-center gap-2 pb-4 bg-transparent pointer-events-none z-30 absolute bottom-0 w-full">
+                     <div id="dot-0" class="dot-indicator active"></div>
+                     <div id="dot-1" class="dot-indicator"></div>
+                     <div id="dot-2" class="dot-indicator"></div>
+                 </div>
+             </div>
+
+        </div>
+
+    </div>
+
+    <!-- === TEMPLATES === -->
+    <div class="hidden">
+        <!-- 1. STYLE -->
+        <div id="tpl-style-content">
+            <section class="space-y-8">
+                <div>
+                    <h3 class="label-text mb-4">模版风格</h3>
+                    <div class="grid grid-cols-3 gap-3">
+                        <button onclick="setTemplate('classic')" id="btn-classic" class="h-20 md:h-24 bg-black/5 dark:bg-white/5 rounded-xl flex flex-col items-center justify-center gap-2 hover:bg-black/10 transition border border-transparent group">
+                            <div class="w-6 h-8 md:w-8 md:h-10 bg-white border border-black/10 shadow-sm flex items-center justify-center transform group-hover:-translate-y-1 transition"><div class="w-3 h-3 md:w-4 md:h-4 bg-black/80"></div></div>
+                            <span class="text-[10px] font-bold opacity-50">Classic</span>
+                        </button>
+                        <button onclick="setTemplate('cinema')" id="btn-cinema" class="h-20 md:h-24 bg-black/5 dark:bg-white/5 rounded-xl flex flex-col items-center justify-center gap-2 hover:bg-black/10 transition border border-transparent group">
+                            <div class="w-6 h-8 md:w-8 md:h-10 bg-black flex flex-col shadow-sm transform group-hover:-translate-y-1 transition"><div class="flex-1"></div><div class="h-1.5 md:h-2 bg-white w-full"></div></div>
+                            <span class="text-[10px] font-bold opacity-50">Cinema</span>
+                        </button>
+                        <button onclick="setTemplate('float')" id="btn-float" class="h-20 md:h-24 bg-black/5 dark:bg-white/5 rounded-xl flex flex-col items-center justify-center gap-2 hover:bg-black/10 transition border border-transparent group">
+                            <div class="w-6 h-8 md:w-8 md:h-10 flex items-center justify-center transform group-hover:-translate-y-1 transition"><div class="w-4 h-6 md:w-6 md:h-8 bg-zinc-400 rounded-md shadow-md"></div></div>
+                            <span class="text-[10px] font-bold opacity-50">Float</span>
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="label-text mb-4">参数调整</h3>
+                    <div class="space-y-7 px-1">
+                        <div class="flex items-center gap-4"><span class="label-text w-12 text-right">字号</span><input type="range" min="0.5" max="2.0" step="0.1" value="1.0" class="dotted-slider flex-1" oninput="updateConfig('fontScale', this.value)"></div>
+                        <div class="flex items-center gap-4"><span class="label-text w-12 text-right">边框</span><input type="range" min="0" max="3.0" step="0.1" value="1.0" class="dotted-slider flex-1" oninput="updateConfig('borderScale', this.value)"></div>
+                        <div class="flex items-center gap-4" id="ctrl-radius" style="display:none"><span class="label-text w-12 text-right">圆角</span><input type="range" min="0" max="100" value="30" class="dotted-slider flex-1" oninput="updateConfig('radius', this.value)"></div>
+                        <div class="flex items-center gap-4"><span class="label-text w-12 text-right">位移</span><input type="range" min="-10" max="10" step="0.5" value="0" class="dotted-slider flex-1" oninput="updateConfig('offsetY', this.value)"></div>
+                        <div class="flex items-center gap-4 pt-2" id="ctrl-frameColor"><span class="label-text w-12 text-right">框色</span><div class="flex gap-3 flex-1"><button onclick="updateConfig('frameColor', 'white')" class="h-9 flex-1 rounded-lg bg-white border border-gray-200 shadow-sm hover:scale-105 transition" title="白色"></button><button onclick="updateConfig('frameColor', 'black')" class="h-9 flex-1 rounded-lg bg-black border border-black shadow-sm hover:scale-105 transition" title="黑色"></button><button onclick="updateConfig('frameColor', 'blur')" class="h-9 flex-1 rounded-lg bg-zinc-400/50 border border-white/10 shadow-sm hover:scale-105 transition" title="模糊背景"></button></div></div>
+                        <div class="flex items-center gap-4"><span class="label-text w-12 text-right">字色</span><div class="flex gap-3 flex-1"><button onclick="updateConfig('fontColor', 'black')" class="h-9 flex-1 rounded-lg bg-black border border-black shadow-sm hover:scale-105 transition" title="黑色文字"></button><button onclick="updateConfig('fontColor', 'white')" class="h-9 flex-1 rounded-lg bg-white border border-gray-200 shadow-sm hover:scale-105 transition" title="白色文字"></button></div></div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- 2. INFO -->
+        <div id="tpl-info-content">
+            <div class="h-full flex flex-col">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="label-text">EXIF 信息</h3>
+                    <div id="proLockBadge" class="hidden flex items-center gap-1.5 opacity-50 text-gold"><i data-lucide="lock" class="w-3 h-3"></i> <span class="text-[10px] font-bold">已锁定</span></div>
+                </div>
+                <div class="space-y-5 flex-1" id="metadataInputs">
+                    <div class="flex p-1 bg-black/5 dark:bg-white/5 rounded-lg">
+                        <button onclick="toggleBrandMode('text')" id="modeTextBtn" class="flex-1 py-2.5 rounded-md text-[12px] font-bold bg-white dark:bg-white/10 shadow-sm transition">文字</button>
+                        <button onclick="toggleBrandMode('image')" id="modeImgBtn" class="flex-1 py-2.5 rounded-md text-[12px] font-bold opacity-40 transition">LOGO</button>
+                    </div>
+                    <div id="brandTextControls" class="space-y-4"><input type="text" id="inp-make" class="glass-input w-full p-3.5" placeholder="相机品牌"><input type="text" id="inp-model" class="glass-input w-full p-3.5" placeholder="相机型号"></div>
+                    <div id="brandLogoControls" class="hidden bg-black/5 dark:bg-white/5 p-4 rounded-xl"><div class="flex items-center gap-4"><div class="w-16 h-16 bg-white/10 flex items-center justify-center cursor-pointer border border-current/10 rounded-lg hover:bg-white/20 transition" onclick="document.getElementById('logoInput').click()"><img id="logoPreview" class="hidden w-full h-full object-contain p-1"><i data-lucide="upload" id="logoPlaceholder" class="w-7 h-7 opacity-30"></i></div><div class="flex-1 space-y-4"><input type="range" min="10" max="300" value="100" class="dotted-slider" oninput="updateLogoScale(this.value)"><div class="flex justify-between text-[10px] opacity-40 font-bold uppercase"><span onclick="toggleLogoInvert()" class="cursor-pointer hover:opacity-100">颜色反转</span><span>缩放</span></div></div></div></div>
+                    <div class="grid grid-cols-2 gap-4 pt-2"><input type="text" id="inp-focal" class="glass-input p-3.5 text-center" placeholder="焦段"><input type="text" id="inp-aperture" class="glass-input p-3.5 text-center" placeholder="光圈"><input type="text" id="inp-shutter" class="glass-input p-3.5 text-center" placeholder="快门"><input type="text" id="inp-iso" class="glass-input p-3.5 text-center" placeholder="ISO"></div>
+                    <input type="text" id="inp-lens" class="glass-input w-full p-3.5" placeholder="镜头型号"><input type="text" id="inp-date" class="glass-input w-full p-3.5" placeholder="拍摄日期">
+                    <p class="text-[10px] opacity-30 text-center italic">若无信息，请检查原图是否包含 EXIF</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. EXPORT -->
+        <div id="tpl-export-content">
+            <div class="flex flex-col gap-8 h-full justify-center">
+                <div class="space-y-6 text-center">
+                    <button onclick="downloadImage()" class="w-full bg-black dark:bg-white text-white dark:text-black py-4 rounded-xl font-black text-[14px] tracking-[0.2em] hover:opacity-90 transition flex items-center justify-center gap-3 shadow-xl transform active:scale-95">
+                        <i data-lucide="download" class="w-5 h-5"></i> 保存图片
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <input type="file" id="fileInput" accept="image/*" multiple>
+    <input type="file" id="logoInput" accept="image/png, image/jpeg, image/svg+xml">
+
+    <script>
+        let isPro = false;
+        let state = {
+            images: [], currentIndex: -1, theme: 'dark',
+            template: 'classic', logo: { img: null, scale: 1.0, invert: false, useImage: false },
+            fontScale: 1.0, borderScale: 1.0, radius: 30, frameColor: 'white', fontColor: 'black', offsetY: 0,
+            mobileTab: 0
+        };
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // --- Auth ---
+        function verifyProCode() {
+            const input = document.getElementById('proCodeInput').value.trim().toUpperCase();
+            const parts = input.split('-');
+            if(parts.length !== 3 || parts[0] !== 'RZ') return showError("格式错误");
+            const salt = parts[1]; const checksum = parts[2];
+            let sum = 0; for(let i=0; i<salt.length; i++) sum += salt.charCodeAt(i) * (i + 1);
+            sum = (sum * 2025) % 65536;
+            if (sum.toString(16).toUpperCase().padStart(4, '0') === checksum) {
+                localStorage.setItem('rz_pro_v9', 'true'); checkProStatus(); toggleProModal(false); alert("欢迎使用专业版");
+            } else showError("激活码无效");
+        }
+        function showError(msg) {
+            const el = document.getElementById('errorMsg'); el.innerText = msg; el.classList.remove('opacity-0');
+            setTimeout(()=>el.classList.add('opacity-0'), 2000);
+        }
+        function checkProStatus() {
+            isPro = localStorage.getItem('rz_pro_v9') === 'true';
+            document.getElementById('appTitle').innerText = isPro ? "RZframe Pro" : "RZframe";
+            const els = { upgrade: document.getElementById('upgradeBtn'), lock: document.getElementById('proLockBadge') };
+            if(isPro) { els.upgrade.style.display = 'none'; els.lock.classList.add('hidden'); } 
+            else { els.upgrade.style.display = 'flex'; els.lock.classList.remove('hidden'); }
+            document.querySelectorAll('#metadataInputs input').forEach(el => el.disabled = !isPro);
+        }
+
+        // --- Initialization ---
+        function initLayout() {
+            // Populate Templates ONCE
+            const styleContent = document.getElementById('tpl-style-content').innerHTML;
+            const infoContent = document.getElementById('tpl-info-content').innerHTML;
+            const exportContent = document.getElementById('tpl-export-content').innerHTML;
+
+            // Desktop Injection
+            const deskStyle = document.getElementById('desktop-style-mount');
+            if(deskStyle) deskStyle.innerHTML = styleContent;
+            
+            const deskRight = document.getElementById('desktop-right-panel');
+            if(deskRight) {
+                deskRight.innerHTML = `
+                    <div class="flex-1 overflow-y-auto no-scrollbar">${infoContent}</div>
+                    <div class="shrink-0 pt-6 border-t border-current/5">${exportContent}</div>
+                `;
+            }
+
+            // Mobile Injection
+            const mobileStyle = document.getElementById('mobile-style-mount');
+            if(mobileStyle) mobileStyle.innerHTML = styleContent;
+            const mobileInfo = document.getElementById('mobile-info-mount');
+            if(mobileInfo) mobileInfo.innerHTML = infoContent;
+            const mobileExport = document.getElementById('mobile-export-mount');
+            if(mobileExport) mobileExport.innerHTML = exportContent;
+
+            // Setup Interaction
+            if(window.innerWidth < 900) initSwipe();
+            
+            restoreUIValues();
+            refreshIcons();
+            checkProStatus();
+        }
+
+        // --- Mobile Interaction ---
+        function updateSwipePosition(index) {
+            state.mobileTab = index;
+            const track = document.getElementById('swipeTrack');
+            track.style.transition = 'transform 0.3s cubic-bezier(0.25, 1, 0.5, 1)';
+            track.style.transform = `translateX(-${index * 33.333}%)`;
+            [0,1,2].forEach(i => {
+                const dot = document.getElementById(`dot-${i}`);
+                if(i === index) dot.classList.add('active'); else dot.classList.remove('active');
+            });
+        }
+
+        function initSwipe() {
+            const area = document.getElementById('controlsArea');
+            const track = document.getElementById('swipeTrack');
+            let startX = 0, currentX = 0, isDragging = false, startTranslate = 0, panelWidth = 0;
+
+            area.addEventListener('touchstart', e => {
+                if(e.target.type === 'range') return; 
+                startX = e.touches[0].clientX; isDragging = true;
+                track.style.transition = 'none';
+                panelWidth = area.offsetWidth;
+                startTranslate = -state.mobileTab * panelWidth;
+            }, {passive: true});
+
+            area.addEventListener('touchmove', e => {
+                if(!isDragging) return;
+                currentX = e.touches[0].clientX;
+                const diff = currentX - startX;
+                let move = diff;
+                if ((state.mobileTab === 0 && diff > 0) || (state.mobileTab === 2 && diff < 0)) move = diff * 0.3;
+                track.style.transform = `translateX(${startTranslate + move}px)`;
+            }, {passive: true});
+
+            area.addEventListener('touchend', e => {
+                if(!isDragging) return;
+                isDragging = false;
+                const diff = currentX - startX;
+                // Reduce threshold to 20% for easier swipe
+                if (Math.abs(diff) > panelWidth * 0.20) {
+                    if (diff > 0 && state.mobileTab > 0) state.mobileTab--;
+                    else if (diff < 0 && state.mobileTab < 2) state.mobileTab++;
+                }
+                updateSwipePosition(state.mobileTab);
+                startX = 0; currentX = 0;
+            }, {passive: true});
+        }
+
+        function restoreUIValues() {
+            if(state.currentIndex === -1) return;
+            // Sync all inputs (Desktop + Mobile instances)
+            ['fontScale', 'borderScale', 'radius', 'offsetY'].forEach(k => {
+                document.querySelectorAll(`input[oninput="updateConfig('${k}', this.value)"]`).forEach(el => el.value = state[k]);
+            });
+            const btnPrefix = `btn-${state.template}`;
+            document.querySelectorAll('button[id^="btn-"]').forEach(b => b.classList.remove('ring-2', 'ring-gold'));
+            document.querySelectorAll(`#${btnPrefix}`).forEach(b => b.classList.add('ring-2', 'ring-gold'));
+            
+            const isFloat = state.template === 'float';
+            document.querySelectorAll('#ctrl-radius').forEach(el => el.style.display = isFloat ? 'flex' : 'none');
+            document.querySelectorAll('#ctrl-frameColor').forEach(el => el.style.display = isFloat ? 'none' : 'flex');
+
+            const d = state.images[state.currentIndex];
+            if(d) {
+                ['make', 'model', 'focal', 'aperture', 'shutter', 'iso', 'lens', 'date'].forEach(k => { 
+                    document.querySelectorAll(`#inp-${k}`).forEach(el => {
+                        if(el) { el.value = d.userEdit[k] || ''; el.oninput = (e)=>{ d.userEdit[k]=e.target.value; render(); } } 
+                    });
+                });
+            }
+        }
+
+        // --- Image Handling ---
+        document.getElementById('fileInput').addEventListener('change', async (e) => {
+            if(e.target.files.length === 0) return;
+            const l = document.getElementById('loadingOverlay');
+            l.classList.remove('hidden'); setTimeout(()=>l.classList.remove('opacity-0'),10);
+            state.images = []; await processImage(e.target.files[0]);
+            l.classList.add('opacity-0'); setTimeout(()=>l.classList.add('hidden'),300);
+            document.getElementById('emptyState').classList.add('hidden');
+            const c = document.getElementById('mainCanvas'); c.classList.remove('hidden'); setTimeout(()=>c.classList.remove('opacity-0'),50);
+            document.getElementById('clearBtn').classList.remove('opacity-0', 'pointer-events-none');
+            selectImage(0);
+        });
+
+        function clearImage() {
+            state.images = []; state.currentIndex = -1;
+            document.getElementById('emptyState').classList.remove('hidden');
+            const c = document.getElementById('mainCanvas'); c.classList.add('hidden', 'opacity-0');
+            document.getElementById('bg-layer').style.opacity = '0';
+            document.getElementById('clearBtn').classList.add('opacity-0', 'pointer-events-none');
+            document.querySelectorAll('#metadataInputs input').forEach(i => i.value = '');
+        }
+
+        function processImage(file) {
+            return new Promise(resolve => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        EXIF.getData(img, function() {
+                            const t = EXIF.getAllTags(this);
+                            const meta = {
+                                make: (t.Make||'').replace(/\0/g,''), model: (t.Model||'').replace(/\0/g,''),
+                                lens: t.LensModel||t.Lens||'', focal: t.FocalLength?`${t.FocalLength}mm`:'',
+                                aperture: t.FNumber?`f/${t.FNumber}`:'', shutter: t.ExposureTime?`1/${Math.round(1/t.ExposureTime)}`:'',
+                                iso: t.ISOSpeedRatings?`ISO${t.ISOSpeedRatings}`:'', date: (t.DateTimeOriginal||'').split(' ')[0].replace(/:/g,'.'),
+                                originalName: file.name.split('.')[0]
+                            };
+                            state.images.push({imgObj:img, meta, userEdit:{...meta}});
+                            resolve();
+                        });
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function selectImage(idx) {
+            state.currentIndex = idx;
+            const img = state.images[idx].imgObj;
+            const bg = document.getElementById('bg-layer');
+            bg.style.backgroundImage = `url(${img.src})`;
+            bg.style.opacity = '1';
+            restoreUIValues();
+            render();
+        }
+
+        function render() {
+            if(state.currentIndex === -1) return;
+            const d = state.images[state.currentIndex];
+            const img = d.imgObj;
+            const w = img.width, h = img.height;
+            
+            let p=0, f=0;
+            if(state.template==='classic') { p=w*0.03*state.borderScale; f=h*0.12*state.borderScale; }
+            else if(state.template==='cinema') { f=h*0.10*state.borderScale; }
+            else if(state.template==='float') { p=w*0.08*state.borderScale; }
+            if(f<h*0.02 && state.template!=='float') f=h*0.02;
+
+            let cw=w, ch=h, ix=0, iy=0;
+            if(state.template==='classic') { cw=w+p*2; ch=h+p+f; ix=p; iy=p; }
+            else if(state.template==='cinema') { ch=h+f; }
+            else if(state.template==='float') { cw=w+p*2; ch=h+p*2; ix=p; iy=p; }
+
+            canvas.width = cw; canvas.height = ch;
+            
+            if(state.template === 'float' || state.frameColor === 'blur') {
+                const smC = document.createElement('canvas'); smC.width=50; smC.height=50*(h/w);
+                smC.getContext('2d').drawImage(img,0,0,smC.width,smC.height);
+                ctx.filter = 'blur(60px) brightness(0.9)';
+                ctx.drawImage(smC,0,0,cw,ch);
+                ctx.filter = 'none';
+                if(state.template !== 'float') { ctx.fillStyle = "rgba(0,0,0,0.1)"; ctx.fillRect(0,0,cw,ch); }
+            } else {
+                ctx.fillStyle = state.frameColor; ctx.fillRect(0,0,cw,ch);
+            }
+
+            ctx.save();
+            if(state.template === 'float') {
+                ctx.shadowColor = "rgba(0,0,0,0.2)"; ctx.shadowBlur = 30; ctx.shadowOffsetY = 15;
+                ctx.beginPath(); const r = state.radius * (w/1000); ctx.roundRect(ix, iy, w, h, r); ctx.clip();
+            }
+            ctx.drawImage(img, ix, iy, w, h);
+            ctx.restore();
+
+            const fs = Math.max(24, h*0.018)*state.fontScale;
+            let by = ch - f/2;
+            if(state.template==='classic') by = h+p+f/2;
+            if(state.template==='float') by = iy+h-w*0.015;
+
+            // Fixed: 3 - Robust Float Offset
+            let offsetYPx = 0;
+            const baseH = f > 0 ? f : h * 0.15; // Use 15% height as base for float movement
+            offsetYPx = (state.offsetY / 10) * baseH;
+
+            ctx.fillStyle = state.fontColor; ctx.textBaseline='middle';
+            const u = d.userEdit;
+            const leftText = u.make; const leftSub = u.model;
+            const rightText = [u.focal, u.aperture, u.shutter, u.iso].filter(x=>x).join('  ');
+            const rightSub = [u.lens, u.date].filter(x=>x).join(' | ');
+
+            ctx.textAlign='left'; const lx = cw*0.05; const ly = by + offsetYPx;
+            if(state.logo.useImage && state.logo.img) {
+                const ls = fs*2 * state.logo.scale; const lw = ls * (state.logo.img.width/state.logo.img.height);
+                ctx.save(); if(state.logo.invert) ctx.filter='invert(1)'; ctx.drawImage(state.logo.img, lx, ly-ls/2, lw, ls); ctx.restore();
+            } else {
+                ctx.font=`900 ${fs*1.5}px 'Cinzel'`; ctx.fillText(leftText, lx, ly-fs*0.4);
+                ctx.font=`600 ${fs*0.6}px 'Inter'`; ctx.globalAlpha = 0.7; ctx.fillText(leftSub, lx, ly+fs*0.8); ctx.globalAlpha = 1.0;
+            }
+
+            ctx.textAlign='right'; const rx = cw*0.95;
+            ctx.font=`500 ${fs}px 'Roboto Mono'`; ctx.fillText(rightText, rx, ly-fs*0.4);
+            ctx.font=`400 ${fs*0.65}px 'Inter'`; ctx.globalAlpha = 0.7; ctx.fillText(rightSub, rx, ly+fs*0.8); ctx.globalAlpha = 1.0;
+        }
+
+        function updateConfig(k,v) { if(k==='frameColor'||k==='fontColor') state[k]=v; else state[k]=parseFloat(v); render(); }
+        function setTemplate(t) { state.template=t; restoreUIValues(); render(); }
+        function toggleBrandMode(m) { 
+            state.logo.useImage = m==='image'; 
+            document.querySelectorAll('#modeTextBtn').forEach(el => el.classList.toggle('opacity-40', m==='image'));
+            document.querySelectorAll('#modeImgBtn').forEach(el => el.classList.toggle('opacity-40', m==='text'));
+            document.querySelectorAll('#brandTextControls').forEach(el => el.classList.toggle('hidden', m==='image'));
+            document.querySelectorAll('#brandLogoControls').forEach(el => el.classList.toggle('hidden', m==='text'));
+            render(); 
+        }
+        function toggleTheme() { document.documentElement.classList.toggle('dark'); state.theme = state.theme==='dark'?'light':'dark'; render(); refreshIcons(); }
+        function toggleProModal(show) {
+            const m = document.getElementById('proModal');
+            if(show) { m.classList.remove('hidden'); setTimeout(()=>m.classList.remove('opacity-0'),10); }
+            else { m.classList.add('opacity-0'); setTimeout(()=>m.classList.add('hidden'),300); }
+        }
+        function refreshIcons() { if(window.lucide) window.lucide.createIcons(); }
+        function downloadImage() {
+            if(state.currentIndex===-1) return;
+            const link = document.createElement('a');
+            const original = state.images[state.currentIndex].userEdit.originalName || 'RZframe';
+            link.download = `${original}_RZ.jpg`;
+            link.href = canvas.toDataURL('image/jpeg', 0.95);
+            link.click();
+        }
+        document.getElementById('logoInput').addEventListener('change', (e)=>{
+            const f = e.target.files[0]; if(!f) return;
+            const r = new FileReader();
+            r.onload = (ev) => {
+                const i = new Image(); i.onload = () => {
+                    state.logo.img = i;
+                    document.querySelectorAll('#logoPreview').forEach(el => { el.src=i.src; el.classList.remove('hidden'); });
+                    document.querySelectorAll('#logoPlaceholder').forEach(el => el.classList.add('hidden'));
+                    render();
+                }; i.src = ev.target.result;
+            }; r.readAsDataURL(f);
+        });
+        function updateLogoScale(v) { state.logo.scale=v/100; render(); }
+        function toggleLogoInvert() { state.logo.invert=!state.logo.invert; render(); }
+
+        // Init - Run once
+        initLayout(); 
+        window.addEventListener('resize', () => {
+            // Optional: Re-run initLayout on orientation change if needed, but CSS handles most
+        });
+
+    </script>
+</body>
+</html>
