@@ -1,4 +1,4 @@
-# RZFrame Web - 极简摄影边框工具 📸
+# RZFrame Web - 极简图片边框工具 📸
 __给你的照片多一点仪式感。__
 ## 📖 简介 (Introduction)
 **RZFrame Web** 是一个基于浏览器的轻量级图片边框处理工具，专为摄影爱好者设计。
