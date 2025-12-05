@@ -89,23 +89,59 @@
         .tpl-icon-cinema { width: 24px; height: 32px; background: currentColor; display: flex; flex-direction: column; justify-content: flex-end; opacity: 0.8; }
         .tpl-icon-cinema::after { content:''; width: 100%; height: 6px; background: var(--bg-color); margin-bottom: 4px; }
         .tpl-icon-float { width: 20px; height: 28px; background: currentColor; box-shadow: 3px 3px 0px rgba(128,128,128,0.4); opacity: 0.8; }
+
+        /* Donation Modal Animation */
+        #donateOverlay {
+            transition: all 0.3s ease;
+        }
+        #donateOverlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.95);
+        }
+        #donateOverlay:not(.hidden) {
+            opacity: 1;
+            pointer-events: auto;
+            transform: scale(1);
+        }
     </style>
 </head>
 <body>
 
-    <!-- Upgrade Modal -->
-    <div id="upgradeModal" class="absolute inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
-        <div class="bg-white dark:bg-zinc-900 w-80 p-6 rounded-2xl shadow-2xl transform scale-95 transition-transform duration-300 relative overflow-hidden text-center" id="modalContent">
-            <div class="absolute top-0 right-0 w-32 h-32 bg-gold/10 rounded-full blur-3xl pointer-events-none"></div>
-            <div class="w-12 h-12 bg-gold/10 text-gold rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="crown" class="w-6 h-6"></i></div>
-            <h3 class="text-lg font-black italic mb-2">UPGRADE TO PRO</h3>
-            <p class="text-xs opacity-60 mb-6 leading-relaxed" data-i18n="proDesc">
-                解锁批量处理、8K 无损原图导出<br>以及更多专业摄影师模版。
-            </p>
-            <button onclick="window.open('https://your-desktop-app-url.com', '_blank')" class="w-full bg-gold hover:bg-yellow-500 text-black font-bold py-3 rounded-xl text-xs tracking-widest transition mb-3" data-i18n="downloadDesktop">
-                下载桌面版
-            </button>
-            <button onclick="toggleModal(false)" class="text-[10px] opacity-40 hover:opacity-100 font-bold tracking-widest" data-i18n="notNow">暂不需要</button>
+    <!-- Donation/Follow Overlay -->
+    <div id="donateOverlay" class="absolute inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm hidden">
+        <div class="glass-panel p-8 w-[440px] max-w-[90%] flex flex-col items-center text-center relative shadow-2xl transform">
+            <button onclick="closeDonate()" class="absolute top-4 right-4 opacity-50 hover:opacity-100 transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+            <div class="w-16 h-16 bg-gradient-to-br from-yellow-100 to-red-100 rounded-full flex items-center justify-center text-yellow-600 mb-4 text-2xl shadow-inner">❤️</div>
+            <h2 class="text-lg font-bold mb-1" data-i18n="donateTitle">Support & Follow</h2>
+            <p class="text-xs opacity-60 mb-6 max-w-[90%]" data-i18n="donateDesc">Support development or follow me for updates!</p>
+
+            <div class="flex gap-3 justify-center w-full">
+                <!-- WeChat -->
+                <div class="flex-1 flex flex-col items-center gap-2">
+                    <div class="w-full aspect-square bg-white rounded-xl p-1.5 shadow-sm border border-white/20 flex items-center justify-center overflow-hidden">
+                        <img src="wechat.jpg" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIiBmaWxsPSIjMDRCRTAyIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIvPjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1zaXplPSIxMiIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IndoaXRlIj5XZWNoYXQ8L3RleHQ+PC9zdmc+'" class="w-full h-full object-cover rounded-lg">
+                    </div>
+                    <span class="text-[10px] font-bold opacity-50">WeChat</span>
+                </div>
+
+                <!-- Alipay -->
+                <div class="flex-1 flex flex-col items-center gap-2">
+                    <div class="w-full aspect-square bg-white rounded-xl p-1.5 shadow-sm border border-white/20 flex items-center justify-center overflow-hidden">
+                        <img src="alipay.jpg" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIiBmaWxsPSIjMTY3OEZGIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIvPjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1zaXplPSIxMiIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IndoaXRlIj5BbGlwYXk8L3RleHQ+PC9zdmc+'" class="w-full h-full object-cover rounded-lg">
+                    </div>
+                    <span class="text-[10px] font-bold opacity-50">Alipay</span>
+                </div>
+
+                <!-- XiaoHongShu (Red) -->
+                <div class="flex-1 flex flex-col items-center gap-2">
+                    <div class="w-full aspect-square bg-white rounded-xl p-1.5 shadow-sm border border-white/20 flex items-center justify-center overflow-hidden relative">
+                        <img src="xhs.jpg" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIiBmaWxsPSIjZmIyMzNiIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIvPjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1zaXplPSIxMiIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IndoaXRlIj5SRUQ8L3RleHQ+PC9zdmc+'" class="w-full h-full object-cover rounded-lg">
+                        <div class="absolute top-0 right-0 bg-red-500 text-white text-[8px] px-1 rounded-bl-lg font-bold">Follow</div>
+                    </div>
+                    <span class="text-[10px] font-bold opacity-50" data-i18n="labelXhs">XiaoHongShu</span>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -136,9 +172,10 @@
                 <i data-lucide="sun" class="w-4 h-4 hidden dark:block"></i>
                 <i data-lucide="moon" class="w-4 h-4 block dark:hidden"></i>
             </button>
-            <!-- Simplified PRO Button (Icon Only) -->
-            <button onclick="toggleModal(true)" class="w-8 h-8 rounded-full bg-gradient-to-r from-yellow-200 to-gold shadow-lg shadow-gold/20 flex items-center justify-center transition hover:scale-105 active:scale-95">
-                <i data-lucide="crown" class="w-4 h-4 text-black"></i>
+            <!-- Donation Button -->
+            <button onclick="openDonate()" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-yellow-500/10 text-yellow-600 hover:bg-yellow-500/20 transition border border-yellow-500/20 text-xs font-bold group">
+                <i data-lucide="heart" class="w-3.5 h-3.5 text-red-500 group-hover:scale-110 transition-transform"></i>
+                <span class="hidden sm:inline" data-i18n="donateBtn">Support</span>
             </button>
         </div>
     </header>
@@ -367,15 +404,15 @@
                 openPhoto: "打开照片", ratio: "比例", leftInfo: "左侧信息", rightInfo: "右侧信息",
                 uploadLogo: "上传 Logo", savePreset: "保存为模版", saveImage: "保存图片",
                 tabStyle: "样式", tabInfo: "信息", tabExport: "导出",
-                proDesc: "解锁批量处理、8K 无损原图导出<br>以及更多专业摄影师模版。",
-                downloadDesktop: "下载桌面版", notNow: "暂不需要", selectPreset: "-- 我的模版 --", presets: "预设"
+                donateBtn: "支持 & 关注", donateTitle: "支持 & 关注", donateDesc: "您的支持是我开发的动力，关注小红书获取更新动态！", labelXhs: "小红书",
+                selectPreset: "-- 我的模版 --", presets: "预设"
             },
             en: {
                 openPhoto: "OPEN PHOTO", ratio: "RATIO", leftInfo: "LEFT INFO", rightInfo: "RIGHT INFO",
                 uploadLogo: "UPLOAD LOGO", savePreset: "SAVE AS PRESET", saveImage: "SAVE IMAGE",
                 tabStyle: "STYLE", tabInfo: "INFO", tabExport: "EXPORT",
-                proDesc: "Unlock batch processing, 8K export<br>and more professional templates.",
-                downloadDesktop: "GET DESKTOP APP", notNow: "NOT NOW", selectPreset: "-- MY PRESETS --", presets: "PRESET"
+                donateBtn: "Support & Follow", donateTitle: "Support & Follow", donateDesc: "Support my work or follow for updates!", labelXhs: "RED",
+                selectPreset: "-- MY PRESETS --", presets: "PRESET"
             }
         };
 
@@ -672,7 +709,7 @@
         function toggleLang() { state.lang = state.lang === 'zh' ? 'en' : 'zh'; updateLangUI(); }
         function updateLangUI() {
             const t = translations[state.lang];
-            document.getElementById('lang-indicator').innerText = state.lang === 'zh' ? '中' : 'EN';
+            document.getElementById('lang-indicator').innerText = state.lang === 'zh' ? 'EN' : '中';
             document.querySelectorAll('[data-i18n]').forEach(el => { const key = el.getAttribute('data-i18n'); if(t[key]) el.innerHTML = t[key]; });
             document.querySelectorAll('.ratio-selector').forEach(sel => sel.options[0].text = state.lang === 'zh' ? '自动' : 'Auto');
         }
@@ -708,7 +745,18 @@
         }
 
         function toggleTheme() { document.documentElement.classList.toggle('dark'); }
-        function toggleModal(show) { const m = document.getElementById('upgradeModal'); if(show) { m.classList.remove('hidden'); setTimeout(()=>m.classList.remove('opacity-0'),10); } else { m.classList.add('opacity-0'); setTimeout(()=>m.classList.add('hidden'),300); } }
+        
+        // Donation Modal Logic
+        function openDonate() {
+            document.getElementById('donateOverlay').classList.remove('hidden');
+        }
+        function closeDonate() {
+            document.getElementById('donateOverlay').classList.add('hidden');
+        }
+        document.getElementById('donateOverlay').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('donateOverlay')) closeDonate();
+        });
+
         function toggleLoading(s) { const l = document.getElementById('loading'); if(s) { l.classList.remove('hidden'); setTimeout(()=>l.classList.remove('opacity-0'),10); } else { l.classList.add('opacity-0'); setTimeout(()=>l.classList.add('hidden'),300); } }
         function resetApp() { if(confirm(state.lang==='zh'?'确定要清空吗？':'Clear all?')) location.reload(); }
         function downloadImage() { if(!state.image) return; const l = document.createElement('a'); l.download = 'RZFrame_Web.jpg'; l.href = canvas.toDataURL('image/jpeg', 0.95); l.click(); }
